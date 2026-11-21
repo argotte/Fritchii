@@ -193,6 +193,8 @@ jobs:
         if: failure()
         shell: bash
         run: |
+          # A grep that matches nothing must not end this step before it reports.
+          set +e +o pipefail
           annotate() {
             local msg
             msg=$(cat)
@@ -209,6 +211,9 @@ jobs:
             grep -v -E "^sccache |^\[[0-9]+/[0-9]+\] |unknown argument ignored" "$log" |
               tail -n 60 | cut -c1-600 | annotate "$log: last lines"
           done
+          [ -f configure.log ] || echo "::error title=no logs::The job failed before Configure"
+          df -h . | annotate "disk"
+          exit 0
 
   release:
     name: Publish pre-release
