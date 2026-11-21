@@ -298,7 +298,7 @@ if (CXX_GCC OR CXX_CLANG)
         # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html
         # Generic supports Pentium Pro instruction set and above
         # TODO: if a value is unknown, pass that as march and mtune
-        set(YUZU_BUILD_PRESET "custom" CACHE STRING "Build preset to use. One of: custom, generic, v3, zen2, zen4, native")
+        set(YUZU_BUILD_PRESET "custom" CACHE STRING "Build preset to use. One of: custom, generic, v3, zen2, zen3, zen4, native")
 
         if (${YUZU_BUILD_PRESET} STREQUAL "generic")
             set(march x86-64)
@@ -309,6 +309,12 @@ if (CXX_GCC OR CXX_CLANG)
         elseif (${YUZU_BUILD_PRESET} STREQUAL "zen2")
             set(march znver2)
             set(mtune znver2)
+        elseif (${YUZU_BUILD_PRESET} STREQUAL "zen3")
+            # Zen 3 and Zen 3+ (Ryzen 5000, Ryzen 6000 and 7x35 mobile such as the 7435HS).
+            set(march znver3)
+            set(mtune znver3)
+            # No FMA contraction: floating-point results stay those of the generic build.
+            set(no_fp_contract ON)
         elseif (${YUZU_BUILD_PRESET} STREQUAL "zen4")
             set(march znver4)
             set(mtune znver4)
@@ -334,6 +340,17 @@ if (CXX_GCC OR CXX_CLANG)
     if (DEFINED march AND DEFINED mtune)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${march} -mtune=${mtune}")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${march} -mtune=${mtune}")
+    endif()
+
+    if (no_fp_contract)
+        # clang-cl ignores -ffp-contract unless it is forwarded with /clang:.
+        if (CXX_CLANG_CL)
+            set(fp_contract "/clang:-ffp-contract=off")
+        else()
+            set(fp_contract "-ffp-contract=off")
+        endif()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${fp_contract}")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${fp_contract}")
     endif()
 endif()
 
