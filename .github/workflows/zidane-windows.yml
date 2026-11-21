@@ -1,6 +1,6 @@
 name: zidane-windows
 
-# Windows builds of the zidane branch (Fritchii v6.2 for a Ryzen 7 7435HS / RTX 4060 Laptop / 16 GB
+# Windows builds of the zidane branch (Fritchii for a Ryzen 7 7435HS / RTX 4060 Laptop / 16 GB
 # laptop). clang-cl like the official releases, so NVIDIA DLSS is compiled in (the MinGW build of
 # release-binaries.yml has no DLSS). Two variants from the same commit and toolchain, for A/B tests:
 #   zen3     -march=znver3 -mtune=znver3, no FMA contraction (same float results as standard)
@@ -171,7 +171,7 @@ jobs:
           stamp=$(grep -o '"[0-9a-f]*"' build/release/src/video_core/nx2_shader_stamp.h | tr -d '"')
           echo "::notice title=shader stamp::$stamp"
           if [ "$stamp" != "143b6220486fb09b" ]; then
-            echo "::error title=shader stamp::$stamp is not the official Windows v6.2 stamp 143b6220486fb09b: players would prepare all shaders again"
+            echo "::error title=shader stamp::$stamp is not the official Windows stamp 143b6220486fb09b (v6.1 to v6.5): players would prepare all shaders again"
             exit 1
           fi
 
@@ -244,6 +244,13 @@ jobs:
     permissions:
       contents: write
     steps:
+      # The version label ("v6.5") names the files and the release.
+      - name: Check out the version label
+        uses: actions/checkout@v5
+        with:
+          sparse-checkout: dist/frizti_version_label.txt
+          sparse-checkout-cone-mode: false
+
       - name: Download builds
         uses: actions/download-artifact@v7
         with:
@@ -254,15 +261,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir dist
+          version=$(head -n 1 dist/frizti_version_label.txt | tr -d '\r\n ')
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          mkdir -p out
           shopt -s nullglob
           for dir in artifacts/fritchii-zidane-*/; do
             label=${dir%/}
             label=${label##*-}
-            (cd "$dir" && zip -qr "${GITHUB_WORKSPACE}/dist/Fritchii-v6.2-zidane-${GITHUB_RUN_NUMBER}-${label}-Windows-x64.zip" .)
+            (cd "$dir" && zip -qr "${GITHUB_WORKSPACE}/out/Fritchii-${version}-zidane-${GITHUB_RUN_NUMBER}-${label}-Windows-x64.zip" .)
           done
-          ls -la dist
-          compgen -G "dist/*.zip" > /dev/null || { echo "No build succeeded"; exit 1; }
+          ls -la out
+          compgen -G "out/*.zip" > /dev/null || { echo "No build succeeded"; exit 1; }
 
       - name: Create release
         shell: bash
@@ -272,20 +281,20 @@ jobs:
           set -euo pipefail
           tag="zidane-build-${GITHUB_RUN_NUMBER}"
           cat > notes.md <<EOF
-          Build automático de la rama \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}), basada en Fritchii v6.2.
+          Build automático de la rama \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}), basada en Fritchii ${VERSION}.
 
           | Archivo | Qué es |
           | --- | --- |
           | \`...-zen3-Windows-x64.zip\` | Optimizado para Ryzen Zen 3 / Zen 3+ (tu 7435HS). **No arranca en CPUs más viejas.** |
           | \`...-standard-Windows-x64.zip\` | Misma configuración que la release oficial, para comparar. |
 
-          Descomprime en una carpeta nueva y abre \`fritchii.exe\`. Usa los mismos datos, ajustes y caché de shaders que la v6.2 oficial.
-          La barra de título dice \`v6.2 zidane-${GITHUB_RUN_NUMBER} zen3\` o \`... standard\`.
+          Descomprime en una carpeta nueva y abre \`fritchii.exe\`. Usa los mismos datos, ajustes y caché de shaders que la ${VERSION} oficial.
+          La barra de título dice \`${VERSION} zidane-${GITHUB_RUN_NUMBER} zen3\` o \`... standard\`.
           El buscador de actualizaciones está apagado en estos builds.
           EOF
-          gh release create "$tag" dist/*.zip \
+          gh release create "$tag" out/*.zip \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
             --prerelease \
-            --title "Fritchii v6.2 zidane build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})" \
+            --title "Fritchii ${VERSION} zidane build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})" \
             --notes-file notes.md
