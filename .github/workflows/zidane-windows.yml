@@ -125,7 +125,9 @@ jobs:
             objects-zidane-${{ matrix.label }}-v1-
 
       # LICHII_BUILD_TAG stays empty, as in the official release: a build-N tag would make the program
-      # call itself Lichii instead of Fritchii v6.2.
+      # call itself Lichii instead of Fritchii v6.2. ENABLE_WERROR=OFF: under clang-cl
+      # src/CMakeLists.txt turns on -Werror=unused without its -Wno-error=unused (that is NOT MSVC
+      # only), and v6.2 has unused lambda captures; warnings change no generated code.
       - name: Configure
         shell: bash
         run: >-
@@ -141,6 +143,7 @@ jobs:
           -DYUZU_USE_BUNDLED_SDL3=ON
           -DENABLE_UPDATE_CHECKER=OFF
           -DUSE_DISCORD_PRESENCE=OFF
+          -DENABLE_WERROR=OFF
           -DCMAKE_C_COMPILER_LAUNCHER=sccache
           -DCMAKE_CXX_COMPILER_LAUNCHER=sccache
           2>&1 | tee configure.log
