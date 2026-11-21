@@ -6,6 +6,9 @@ name: zidane-windows
 #   zen3     -march=znver3 -mtune=znver3, no FMA contraction (same float results as standard)
 #   standard no CPU preset, the configuration of the official release
 # The update checker is off: it points at another project's releases.
+# LICENSES/Fritchii-Additional-Terms.txt (GPLv3 section 7): the releases are marked as unofficial
+# modified builds, carry the credit "Shader precompile system by Frizti (Fritchii)" and are not
+# named Fritchii; the *.nx2recipe files (LICENSES/Fritchii-Recipe.txt) are never packaged.
 
 on:
   workflow_dispatch:
@@ -268,7 +271,7 @@ jobs:
           for dir in artifacts/fritchii-zidane-*/; do
             label=${dir%/}
             label=${label##*-}
-            (cd "$dir" && zip -qr "${GITHUB_WORKSPACE}/out/Fritchii-${version}-zidane-${GITHUB_RUN_NUMBER}-${label}-Windows-x64.zip" .)
+            (cd "$dir" && zip -qr "${GITHUB_WORKSPACE}/out/zidane-${GITHUB_RUN_NUMBER}-${label}-Windows-x64.zip" .)
           done
           ls -la out
           compgen -G "out/*.zip" > /dev/null || { echo "No build succeeded"; exit 1; }
@@ -281,20 +284,22 @@ jobs:
           set -euo pipefail
           tag="zidane-build-${GITHUB_RUN_NUMBER}"
           cat > notes.md <<EOF
-          Build automático de la rama \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}), basada en Fritchii ${VERSION}.
+          **Build no oficial y modificado.** No es una release de Frizti ni de Fritchii. Es un fork personal basado en Fritchii ${VERSION} (GPL v3), compilado desde la rama \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}). Los problemas de este build no deben reportarse al autor original.
+
+          Shader precompile system by Frizti (Fritchii).
 
           | Archivo | Qué es |
           | --- | --- |
-          | \`...-zen3-Windows-x64.zip\` | Optimizado para Ryzen Zen 3 / Zen 3+ (tu 7435HS). **No arranca en CPUs más viejas.** |
-          | \`...-standard-Windows-x64.zip\` | Misma configuración que la release oficial, para comparar. |
+          | \`...-zen3-Windows-x64.zip\` | Compilado para Ryzen Zen 3 / Zen 3+ (7435HS). **No arranca en CPUs más viejas.** |
+          | \`...-standard-Windows-x64.zip\` | Misma configuración de compilación que la release oficial, para comparar. |
 
-          Descomprime en una carpeta nueva y abre \`fritchii.exe\`. Usa los mismos datos, ajustes y caché de shaders que la ${VERSION} oficial.
-          La barra de título dice \`${VERSION} zidane-${GITHUB_RUN_NUMBER} zen3\` o \`... standard\`.
-          El buscador de actualizaciones está apagado en estos builds.
+          Descomprime en una carpeta nueva y abre \`fritchii.exe\`. Usa los mismos datos, ajustes y caché de shaders que la ${VERSION} oficial. La barra de título dice \`${VERSION} zidane-${GITHUB_RUN_NUMBER} zen3\` o \`... standard\`. El buscador de actualizaciones está apagado.
+
+          **No incluye la receta de shaders** (\`*.nx2recipe\`): es de Frizti, con todos los derechos reservados, y no puede copiarse a otros builds sin su permiso. Para preparar shaders usa la versión oficial: el sello es el mismo, así que este build usa los shaders ya preparados.
           EOF
           gh release create "$tag" out/*.zip \
             --repo "${GITHUB_REPOSITORY}" \
             --target "${GITHUB_SHA}" \
             --prerelease \
-            --title "Fritchii ${VERSION} zidane build ${GITHUB_RUN_NUMBER} (${GITHUB_SHA::7})" \
+            --title "zidane build ${GITHUB_RUN_NUMBER}: no oficial, basado en Fritchii ${VERSION} (${GITHUB_SHA::7})" \
             --notes-file notes.md

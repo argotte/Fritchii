@@ -1,6 +1,6 @@
-# Fritchii zidane
+# zidane
 
-Fork personal de [Fritchii](https://github.com/Frizti/Fritchii) para jugar *The Legend of Zelda:
+Fork personal y no oficial de [Fritchii](https://github.com/Frizti/Fritchii) para jugar *The Legend of Zelda:
 Ocarina of Time* (remake) con FPS estables en una laptop:
 
 - CPU: AMD Ryzen 7 7435HS (Zen 3+, 8 núcleos / 16 hilos, 16 MB de L3)
@@ -71,6 +71,16 @@ En los dos:
    `Hitch` nombran la causa de cada tirón (memoria, compilación, hilo de GPU).
 4. Profiling Mode (**Help > Profiling Mode**) se usa solo para saber en qué gasta el tiempo cada
    hilo; no para comparar FPS.
+
+## Licencia y créditos
+
+- Este fork es una versión **modificada y no oficial**: no es una release de Frizti ni de Fritchii,
+  y sus builds no se publican con ese nombre (`LICENSES/Fritchii-Additional-Terms.txt`, GPLv3
+  sección 7).
+- Shader precompile system by Frizti (Fritchii).
+- Las recetas de shaders (`*.nx2recipe`) son de Frizti, con todos los derechos reservados
+  (`LICENSES/Fritchii-Recipe.txt`). Este fork no las incluye ni las copia a sus builds.
+- Frizti pide que quien quiera usar su sistema de precompilación se lo consulte primero por Discord.
 
 ## Próximos pasos
 
