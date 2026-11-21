@@ -50,6 +50,13 @@ jobs:
             preset: custom
 
     steps:
+      # The Preparing shaders stamp hashes the shader sources with their line endings. The official
+      # Windows release comes from a CRLF checkout (stamp 143b6220486fb09b): the same stamp lets
+      # players keep the shaders they already prepared.
+      - name: Use CRLF line endings
+        shell: bash
+        run: git config --global core.autocrlf true
+
       - name: Check out source
         uses: actions/checkout@v5
 
@@ -96,7 +103,7 @@ jobs:
           glslangValidator --version | head -n 1
           /c/llvm22/bin/clang-cl.exe --version
           cmake --version | head -n 1
-          echo "::notice title=clang-cl::$(/c/llvm22/bin/clang-cl.exe --version | head -n 1)"
+          echo "::notice title=tools::$(/c/llvm22/bin/clang-cl.exe --version | head -n 1); $(cmake --version | head -n 1)"
 
       - name: Restore CPM downloads
         id: cpm-cache
@@ -155,6 +162,16 @@ jobs:
           cmake --build build/release --target yuzu --parallel 2>&1 | tee build.log
           sccache --show-stats
 
+      - name: Check the Preparing shaders stamp
+        shell: bash
+        run: |
+          stamp=$(grep -o '"[0-9a-f]*"' build/release/src/video_core/nx2_shader_stamp.h | tr -d '"')
+          echo "::notice title=shader stamp::$stamp"
+          if [ "$stamp" != "143b6220486fb09b" ]; then
+            echo "::error title=shader stamp::$stamp is not the official Windows v6.2 stamp 143b6220486fb09b: players would prepare all shaders again"
+            exit 1
+          fi
+
       - name: Stop sccache
         if: always() && steps.compiler-cache.outcome == 'success'
         shell: pwsh
@@ -208,6 +225,7 @@ jobs:
             [ -f "$log" ] || continue
             grep -n -E "error:|error [A-Z]+[0-9]+:|fatal error|CMake Error|FAILED:" "$log" |
               grep -v -E "^[0-9]+:sccache " | cut -c1-600 | head -n 40 | annotate "$log: first errors"
+            grep -A 10 "CMake Error" "$log" | head -n 40 | cut -c1-600 | annotate "$log: CMake errors"
             grep -v -E "^sccache |^\[[0-9]+/[0-9]+\] |unknown argument ignored" "$log" |
               tail -n 60 | cut -c1-600 | annotate "$log: last lines"
           done

@@ -22,6 +22,10 @@
 #   hashes: any later edit to these files leaves it, and the build stops again until someone
 #   checks that edit too.
 
+# Script mode sets no policies: before CMake 4, while(TRUE) below is false (CMP0012 OLD), the skip
+# blocks stay in and the stamp differs from a CMake 4 build's.
+cmake_policy(SET CMP0012 NEW)
+
 set(SkipBlocksIn "vk_graphics_pipeline.h;vk_compute_pipeline.h")
 # v6.1, kept by 6.2: Windows (CRLF checkout), Linux (LF checkout).
 set(KnownStamps "143b6220486fb09b;3dc8b3ea00f9b392")
